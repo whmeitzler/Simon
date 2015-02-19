@@ -14,7 +14,7 @@ import lejos.nxt.TouchSensor;
 import lejos.util.Delay;
 
 public class Simon {
-    enum Location{TOP, BOTTOM, LEFT, RIGHT};
+    //Describes attributes of each button
     enum Move{ BLUE   (SensorPort.S4, 415), 
                WHITE  (SensorPort.S3, 247), 
                BLACK  (SensorPort.S1, 207),
@@ -54,9 +54,11 @@ public class Simon {
             return null;
         }
     };
+    //Game values
     LinkedList<Move> gameQueue;
     int tone_length, pause_length, sequence_delay, lose_tone;
     final int WIN_ROUND = 20;
+    //LCD constants
     final int SW = LCD.SCREEN_WIDTH;
     final int SH = LCD.SCREEN_HEIGHT;
     Graphics g;
@@ -67,6 +69,7 @@ public class Simon {
        pause_length = 150;
        g = new Graphics();
     }
+    //Plays a single game of Simon
     void playGame(){
         boolean successfulRun = false;
         do{
@@ -79,11 +82,13 @@ public class Simon {
         if(successfulRun) win();
         else lose();
     }
+    //Regales user with failure
     private void lose(){
         g.setFont(Font.getFont(0, 0, Font.SIZE_LARGE));
         g.drawString("You Lose!", SW / 2, 32, Graphics.HCENTER | Graphics.BASELINE);
         Sound.playTone(65, 1500);
     }
+    //Plays music of success!
     private void win(){
         g.setFont(Font.getFont(0, 0, Font.SIZE_LARGE));
         g.drawString("You Win!", SW / 2, 32, Graphics.HCENTER | Graphics.BASELINE);
@@ -109,6 +114,7 @@ public class Simon {
         Sound.playTone(415, 100);
         Delay.msDelay(100);
     }
+    //Clears out the game queue and offers another game
     public void reset(){
         gameQueue.clear();
         g.setFont(Font.getFont(0, 0, Font.SIZE_MEDIUM));
@@ -117,6 +123,7 @@ public class Simon {
         Button.waitForAnyPress();
         LCD.clear();
     }
+    //Increases the speed of the game at points as defined by original MB game
     private void adjustDifficulty() {
         int length = gameQueue.size();
         if(length <= 5){
@@ -129,16 +136,20 @@ public class Simon {
             tone_length = 220;
         }
     }
+    //Shows the current state of the game queue to the user 
+    //Remembering that state is his job!
     void displayPath(){
         for(Move m : gameQueue){
             //LCD.drawString(m.toString(), 2, LCD.CELL_HEIGHT /2 );
-            drawButton(m);
+            displayMove(m);
             Sound.playTone(m.tone, tone_length);
             Delay.msDelay(tone_length + pause_length);
             LCD.clear();
         }
     }
-    public void drawButton(Move m){
+    
+    //Paints the appropriate color and location to the LCD to indicate a move
+    public void displayMove(Move m){
         Font large = Font.getFont(0, 0, Font.SIZE_LARGE);
         Image base = Image.createImage(SW, large.getHeight());
         Graphics bg = base.getGraphics();
@@ -168,6 +179,7 @@ public class Simon {
         
         }
     }
+    //Gets responses from the player, checking each against the game path
     public boolean getResponsePath(){
         Move selected;
         for(Move m : gameQueue){
@@ -180,6 +192,7 @@ public class Simon {
         }
         return true;
     }
+    //main method
     public static void main(String[] args){
         Simon s = new Simon();
         while(true){
