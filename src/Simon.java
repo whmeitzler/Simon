@@ -33,13 +33,16 @@ public class Simon {
     enum Color {
         BLUE(SensorPort.S4, 415), WHITE(SensorPort.S3, 247), BLACK(
                 SensorPort.S1, 207), YELLOW(SensorPort.S2, 311);
+        
         public final TouchSensor sensor;// A Color's physical sensor
         public final int tone; // A Color's tone frequency
-        private static final long MINIMUM_DELAY = 100, MAXIMUM_DELAY = 1000;
+        private static final long MINIMUM_DELAY = 50, MAXIMUM_DELAY = 1000;
         private static final Random RANDOM = new Random();// For randomizing
                                                           // Colors
         public static final Color[] VALUES = Color.values();// A static instance
                                                             // of the Colors
+        public boolean prevoiuslySelected = false;          //If this color has been selected on prevoius check
+                                                            //Updated by getNextSelected()
         private static final int SIZE = VALUES.length;// Duh
         private static long lastObserved = 0;// last time a check was made
                                              // (Debounce minimization)
@@ -86,13 +89,15 @@ public class Simon {
                 ;
             while (System.currentTimeMillis() - start < MAXIMUM_DELAY) {
                 for (Color m : Color.VALUES)
-                    if (m.isSelected()) {
-                        while (m.isSelected())
-                            ;
+                    if (m.isSelected() && m.prevoiuslySelected == false) {
+                        m.prevoiuslySelected = true;
                         lastObserved = System.currentTimeMillis();
                         lastColor = m;
                         return m;
+                    }else{
+                        m.prevoiuslySelected = false;
                     }
+                
             }
             lastObserved = System.currentTimeMillis();
             return null;
@@ -127,7 +132,16 @@ public class Simon {
             adjustDifficulty();
             displayPath();
             successfulRun = getResponsePath();
-            Delay.msDelay(sequence_delay);
+            if(successfulRun){
+                displayLevel();
+                Sound.beepSequenceUp();
+                Delay.msDelay(200);
+            }    
+            if(successfulRun){
+                Sound.beepSequenceUp();
+                displayLevel();
+                Delay.msDelay(sequence_delay);
+            }    
         } while (successfulRun && gameQueue.size() < WIN_ROUND);
         if (successfulRun)
             win();
@@ -227,6 +241,7 @@ public class Simon {
     public void displayColor(Color m) {
         if(m == null)
             return;
+        LCD.clear();
         Font large = Font.getFont(0, 0, Font.SIZE_LARGE);
         Image base = Image.createImage(SW, large.getHeight());
         Graphics bg = base.getGraphics();
@@ -256,10 +271,20 @@ public class Simon {
             break;
         default:
             break;
-
         }
     }
-
+    /**
+     * Prints the level (The length of the game queue) to the center of the screen
+     */
+    public void displayLevel(){
+        Font large = Font.getFont(0, 0, Font.SIZE_LARGE);
+        Image base = Image.createImage(SW, large.getHeight());
+        Graphics bg = base.getGraphics();
+        bg.setFont(large);
+        String score = "" + gameQueue.size();//gameQueue.size();
+        bg.drawString(score, SW / 2, 0, Graphics.HCENTER);
+        g.drawImage(base, 0, SH/2 - large.getHeight()/2, 0);
+    }
     /**
      * Gets responses from the player, checking each against the game path
      * @return True if the player was successful replicating the game path
@@ -291,3 +316,4 @@ public class Simon {
         }
     }
 }
+
